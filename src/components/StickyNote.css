@@ -28,6 +28,9 @@
   transition: none;
 }
 
+/* ドラッグ中でない場合のみ、編集可能領域でポインターカーソル */
+
+/* ドラッグ中は全ての子要素をつかむカーソルにする */
 .sticky-note--dragging * {
   cursor: grabbing !important;
 }
@@ -117,13 +120,14 @@
   color: inherit;
   border-radius: 4px;
   padding: 4px 8px;
-  cursor: pointer;
+  cursor: pointer !important;
   font-size: 12px;
   transition: background-color 0.2s ease;
 }
 
 .sticky-note__btn:hover {
   background: rgba(255, 255, 255, 0.3);
+  cursor: pointer !important;
 }
 
 .sticky-note__btn--complete {
@@ -145,16 +149,22 @@
 }
 
 /* 編集可能領域のスタイル */
-.sticky-note__editable-area {
-  cursor: pointer;
+.sticky-note .sticky-note__editable-area {
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer !important;
 }
 
-.sticky-note__editable-area:hover {
+.sticky-note .sticky-note__editable-area:hover {
   background-color: rgba(255, 255, 255, 0.3);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  cursor: pointer !important;
+}
+
+/* ドラッグ中は編集可能領域でもつかむカーソルにする */
+.sticky-note--dragging .sticky-note__editable-area {
+  cursor: grabbing !important;
 }
 
 .sticky-note__title {

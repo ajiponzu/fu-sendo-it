@@ -65,7 +65,16 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
 
   // マウスダウン開始
   const handleMouseDown = (e: MouseEvent) => {
-    if (isEditing()) return; // 編集中はドラッグ無効
+    // 編集中の場合、入力フィールド上でのドラッグのみ無効にする
+    if (isEditing()) {
+      const target = e.target as HTMLElement;
+      const isInputField =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.closest("input") ||
+        target.closest("textarea");
+      if (isInputField) return; // 入力フィールド上では ドラッグ無効
+    }
 
     // マウスダウン位置を記録
     setMouseDownPosition({ x: e.clientX, y: e.clientY });
