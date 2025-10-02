@@ -13,6 +13,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
   const [editContent, setEditContent] = createSignal(props.todo.content);
   const [isDragging, setIsDragging] = createSignal(false);
   const [dragOffset, setDragOffset] = createSignal({ x: 0, y: 0 });
+  const [tempPosition, setTempPosition] = createSignal({ x: 0, y: 0 });
 
   const handleSave = () => {
     todoStore.updateTodo(props.todo.id, {
@@ -43,6 +44,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     if (isEditing()) return; // 編集中はドラッグ無効
 
     setIsDragging(true);
+    setTempPosition({ x: props.todo.position.x, y: props.todo.position.y });
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
@@ -64,17 +66,22 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     };
 
     // 画面外に出ないように制限
-    const maxX = window.innerWidth - 250; // 付箋の幅を考慮
-    const maxY = window.innerHeight - 200; // 付箋の高さを考慮
+    const maxX = window.innerWidth - 270; // 付箋の幅 + パディング
+    const maxY = window.innerHeight - 220; // 付箋の高さ + パディング
 
-    newPosition.x = Math.max(0, Math.min(maxX, newPosition.x));
-    newPosition.y = Math.max(0, Math.min(maxY, newPosition.y));
+    newPosition.x = Math.max(20, Math.min(maxX, newPosition.x));
+    newPosition.y = Math.max(20, Math.min(maxY, newPosition.y));
 
-    todoStore.updatePosition(props.todo.id, newPosition);
+    // ドラッグ中は一時的な位置のみ更新
+    setTempPosition(newPosition);
   };
 
   // ドラッグ終了
   const handleMouseUp = () => {
+    if (isDragging()) {
+      // ドラッグ終了時に最終位置を保存
+      todoStore.updatePosition(props.todo.id, tempPosition());
+    }
     setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
@@ -94,8 +101,8 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       style={{
         transform: `rotate(${randomRotation()}deg)`,
         position: "absolute",
-        left: `${props.todo.position.x}px`,
-        top: `${props.todo.position.y}px`,
+        left: `${isDragging() ? tempPosition().x : props.todo.position.x}px`,
+        top: `${isDragging() ? tempPosition().y : props.todo.position.y}px`,
         cursor: isDragging() ? "grabbing" : "grab",
       }}
       onMouseDown={handleMouseDown}

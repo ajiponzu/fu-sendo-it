@@ -20,33 +20,6 @@ function App() {
           </div>
         }
       >
-        <header class="app__header">
-          <h1 class="app__title">🌸 Fu-Sendo-It</h1>
-          <p class="app__subtitle">付箋形式のTodoアプリ</p>
-
-          <div class="app__stats">
-            <span class="app__stat">
-              付箋数: <strong>{todoStore.todos().length}</strong>
-            </span>
-          </div>
-
-          <Show when={todoStore.todos().length > 0}>
-            <button
-              class="app__backup-btn"
-              onClick={async () => {
-                const success = await todoStore.createBackup();
-                if (success) {
-                  alert("バックアップが作成されました！");
-                } else {
-                  alert("バックアップの作成に失敗しました。");
-                }
-              }}
-            >
-              📁 バックアップを作成
-            </button>
-          </Show>
-        </header>
-
         <div class="app__workspace">
           <Show
             when={todoStore.todos().length > 0}
