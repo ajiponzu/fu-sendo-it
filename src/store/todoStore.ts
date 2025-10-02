@@ -39,6 +39,7 @@ export const todoStore = {
       createdAt: new Date(),
       updatedAt: new Date(),
       position: generateRandomPosition(),
+      progress: 0, // デフォルト進捗率は0%
     };
     setTodos((prev) => [...prev, newTodo]);
     await todoStore.saveToStorage();
@@ -61,6 +62,30 @@ export const todoStore = {
     setTodos((prev) =>
       prev.map((todo) =>
         todo.id === id ? { ...todo, position, updatedAt: new Date() } : todo
+      )
+    );
+    await todoStore.saveToStorage();
+  },
+
+  // 期限を更新する専用メソッド
+  updateDeadline: async (id: string, deadline: Date | undefined) => {
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id ? { ...todo, deadline, updatedAt: new Date() } : todo
+      )
+    );
+    await todoStore.saveToStorage();
+  },
+
+  // 進捗率を更新する専用メソッド
+  updateProgress: async (id: string, progress: number) => {
+    // 進捗率は0-100の範囲でクランプ
+    const clampedProgress = Math.max(0, Math.min(100, progress));
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id
+          ? { ...todo, progress: clampedProgress, updatedAt: new Date() }
+          : todo
       )
     );
     await todoStore.saveToStorage();
@@ -114,6 +139,8 @@ export const todoStore = {
         createdAt: new Date(todo.createdAt),
         updatedAt: new Date(todo.updatedAt),
         position: todo.position || generateRandomPosition(),
+        progress: todo.progress ?? 0, // 既存データに進捗率がない場合は0%
+        deadline: todo.deadline ? new Date(todo.deadline) : undefined, // 期限があれば変換
       }));
       setTodos(todosWithPosition);
       console.log("Todos loaded successfully");
@@ -128,6 +155,8 @@ export const todoStore = {
             createdAt: new Date(todo.createdAt),
             updatedAt: new Date(todo.updatedAt),
             position: todo.position || generateRandomPosition(),
+            progress: todo.progress ?? 0, // 既存データに進捗率がない場合は0%
+            deadline: todo.deadline ? new Date(todo.deadline) : undefined, // 期限があれば変換
           }));
           setTodos(parsedTodos);
           // Tauriファイルシステムに移行

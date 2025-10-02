@@ -273,3 +273,152 @@
   font-size: 10px;
   opacity: 0.7;
 }
+
+/* ページ切り替えスタイル */
+.sticky-note__page-indicator {
+  display: flex;
+  gap: 4px;
+}
+
+.sticky-note__page-btn {
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.sticky-note__page-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.sticky-note__page-btn--active {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+/* 詳細ページスタイル */
+.sticky-note__details {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex-grow: 1;
+}
+
+.sticky-note__detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+}
+
+.sticky-note__detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.sticky-note__date-input {
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.sticky-note__clear-btn {
+  position: absolute;
+  right: 4px;
+  top: 24px;
+  background: rgba(244, 67, 54, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.sticky-note__clear-btn:hover {
+  background: rgba(244, 67, 54, 1);
+}
+
+.sticky-note__progress-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sticky-note__progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sticky-note__progress-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sticky-note__progress-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.sticky-note__progress-input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.sticky-note__progress-unit {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.sticky-note__progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.sticky-note__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50 0%, #2196f3 50%, #9c27b0 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}

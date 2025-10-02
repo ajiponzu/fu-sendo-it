@@ -23,6 +23,11 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     x: 0,
     y: 0,
   });
+  const [currentPage, setCurrentPage] = createSignal(1); // 1: メインページ, 2: 詳細ページ
+  const [editDeadline, setEditDeadline] = createSignal(
+    props.todo.deadline ? props.todo.deadline.toISOString().split("T")[0] : ""
+  );
+  const [editProgress, setEditProgress] = createSignal(props.todo.progress);
 
   const handleSave = () => {
     todoStore.updateTodo(props.todo.id, {
@@ -30,6 +35,15 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       content: editContent().trim(),
     });
     setIsEditing(false);
+  };
+
+  const handleDeadlineSave = () => {
+    const deadlineDate = editDeadline() ? new Date(editDeadline()) : undefined;
+    todoStore.updateDeadline(props.todo.id, deadlineDate);
+  };
+
+  const handleProgressSave = () => {
+    todoStore.updateProgress(props.todo.id, editProgress());
   };
 
   const handleCancel = () => {
@@ -149,16 +163,25 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       onMouseDown={handleMouseDown}
     >
       <div class="sticky-note__header">
+        <div class="sticky-note__page-indicator">
+          <button
+            class={`sticky-note__page-btn ${
+              currentPage() === 1 ? "sticky-note__page-btn--active" : ""
+            }`}
+            onClick={() => setCurrentPage(1)}
+          >
+            📝
+          </button>
+          <button
+            class={`sticky-note__page-btn ${
+              currentPage() === 2 ? "sticky-note__page-btn--active" : ""
+            }`}
+            onClick={() => setCurrentPage(2)}
+          >
+            📊
+          </button>
+        </div>
         <div class="sticky-note__actions">
-          <Show when={!isEditing()}>
-            <button
-              class="sticky-note__btn sticky-note__btn--edit"
-              onClick={() => setIsEditing(true)}
-              title="編集"
-            >
-              ✏️
-            </button>
-          </Show>
           <button
             class="sticky-note__btn sticky-note__btn--delete"
             onClick={handleDelete}
@@ -170,48 +193,123 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       </div>
 
       <div class="sticky-note__content">
-        <Show
-          when={isEditing()}
-          fallback={
-            <div>
-              <h3 class="sticky-note__title">
-                {props.todo.title || "Untitled"}
-              </h3>
-              <p class="sticky-note__text">
-                {props.todo.content || "クリックして編集..."}
-              </p>
+        <Show when={currentPage() === 1}>
+          <Show
+            when={isEditing()}
+            fallback={
+              <div>
+                <h3 class="sticky-note__title">
+                  {props.todo.title || "Untitled"}
+                </h3>
+                <p class="sticky-note__text">
+                  {props.todo.content || "クリックして編集..."}
+                </p>
+              </div>
+            }
+          >
+            <div class="sticky-note__edit-form">
+              <input
+                type="text"
+                class="sticky-note__title-input"
+                value={editTitle()}
+                onInput={(e) => setEditTitle(e.currentTarget.value)}
+                placeholder="タイトル"
+                autofocus
+              />
+              <textarea
+                class="sticky-note__content-input"
+                value={editContent()}
+                onInput={(e) => setEditContent(e.currentTarget.value)}
+                placeholder="内容を入力..."
+                rows="4"
+              />
+              <div class="sticky-note__edit-actions">
+                <button
+                  class="sticky-note__btn sticky-note__btn--save"
+                  onClick={handleSave}
+                >
+                  保存
+                </button>
+                <button
+                  class="sticky-note__btn sticky-note__btn--cancel"
+                  onClick={handleCancel}
+                >
+                  キャンセル
+                </button>
+              </div>
             </div>
-          }
-        >
-          <div class="sticky-note__edit-form">
-            <input
-              type="text"
-              class="sticky-note__title-input"
-              value={editTitle()}
-              onInput={(e) => setEditTitle(e.currentTarget.value)}
-              placeholder="タイトル"
-              autofocus
-            />
-            <textarea
-              class="sticky-note__content-input"
-              value={editContent()}
-              onInput={(e) => setEditContent(e.currentTarget.value)}
-              placeholder="内容を入力..."
-              rows="4"
-            />
-            <div class="sticky-note__edit-actions">
-              <button
-                class="sticky-note__btn sticky-note__btn--save"
-                onClick={handleSave}
-              >
-                保存
-              </button>
-              <button
-                class="sticky-note__btn sticky-note__btn--cancel"
-                onClick={handleCancel}
-              >
-                キャンセル
-              </button>
+          </Show>
+        </Show>
+
+        <Show when={currentPage() === 2}>
+          <div class="sticky-note__details">
+            <div class="sticky-note__detail-group">
+              <label class="sticky-note__detail-label">期限</label>
+              <input
+                type="date"
+                class="sticky-note__date-input"
+                value={editDeadline()}
+                onInput={(e) => {
+                  setEditDeadline(e.currentTarget.value);
+                  handleDeadlineSave();
+                }}
+              />
+              <Show when={props.todo.deadline}>
+                <button
+                  class="sticky-note__clear-btn"
+                  onClick={() => {
+                    setEditDeadline("");
+                    handleDeadlineSave();
+                  }}
+                  title="期限をクリア"
+                >
+                  ✕
+                </button>
+              </Show>
+            </div>
+
+            <div class="sticky-note__detail-group">
+              <label class="sticky-note__detail-label">
+                進捗率: {editProgress()}%
+              </label>
+              <input
+                type="range"
+                class="sticky-note__progress-slider"
+                min="0"
+                max="100"
+                step="1"
+                value={editProgress()}
+                onInput={(e) => {
+                  setEditProgress(parseInt(e.currentTarget.value));
+                  handleProgressSave();
+                }}
+              />
+              <div class="sticky-note__progress-input-group">
+                <input
+                  type="number"
+                  class="sticky-note__progress-input"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={editProgress()}
+                  onInput={(e) => {
+                    const value = Math.max(
+                      0,
+                      Math.min(100, parseInt(e.currentTarget.value) || 0)
+                    );
+                    setEditProgress(value);
+                    handleProgressSave();
+                  }}
+                />
+                <span class="sticky-note__progress-unit">%</span>
+              </div>
+            </div>
+
+            <div class="sticky-note__progress-bar">
+              <div
+                class="sticky-note__progress-fill"
+                style={{ width: `${editProgress()}%` }}
+              />
             </div>
           </div>
         </Show>

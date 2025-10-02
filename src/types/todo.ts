@@ -9,6 +9,8 @@ export interface Todo {
     x: number;
     y: number;
   };
+  deadline?: Date; // 期限（オプショナル）
+  progress: number; // 進捗率（0-100）
 }
 
 export type StickyColor =
