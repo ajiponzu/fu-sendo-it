@@ -5,6 +5,7 @@ import "./StickyNote.css";
 
 interface StickyNoteProps {
   todo: Todo;
+  zoomLevel: number;
 }
 
 const StickyNote: Component<StickyNoteProps> = (props) => {
@@ -12,13 +13,16 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
   const [editTitle, setEditTitle] = createSignal(props.todo.title);
   const [editContent, setEditContent] = createSignal(props.todo.content);
   const [isDragging, setIsDragging] = createSignal(false);
-  const [dragOffset, setDragOffset] = createSignal({ x: 0, y: 0 });
   const [tempPosition, setTempPosition] = createSignal({ x: 0, y: 0 });
   const [mouseDownPosition, setMouseDownPosition] = createSignal({
     x: 0,
     y: 0,
   });
   const [hasMouseMoved, setHasMouseMoved] = createSignal(false);
+  const [dragStartPosition, setDragStartPosition] = createSignal({
+    x: 0,
+    y: 0,
+  });
 
   const handleSave = () => {
     todoStore.updateTodo(props.todo.id, {
@@ -52,11 +56,9 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     setMouseDownPosition({ x: e.clientX, y: e.clientY });
     setHasMouseMoved(false);
     setTempPosition({ x: props.todo.position.x, y: props.todo.position.y });
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+    setDragStartPosition({
+      x: props.todo.position.x,
+      y: props.todo.position.y,
     });
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -79,14 +81,21 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
 
     if (!isDragging()) return;
 
+    // ズームレベルを考慮した相対移動量を計算
+    const deltaX = (e.clientX - mouseDownPosition().x) / props.zoomLevel;
+    const deltaY = (e.clientY - mouseDownPosition().y) / props.zoomLevel;
+
     const newPosition = {
-      x: e.clientX - dragOffset().x,
-      y: e.clientY - dragOffset().y,
+      x: dragStartPosition().x + deltaX,
+      y: dragStartPosition().y + deltaY,
     };
 
-    // 画面外に出ないように制限
-    const maxX = window.innerWidth - 270; // 付箋の幅 + パディング
-    const maxY = window.innerHeight - 220; // 付箋の高さ + パディング
+    // ズーム時も実際の利用可能領域で制限（ズームアウト時により広い範囲で移動可能）
+    const effectiveWidth = window.innerWidth / props.zoomLevel;
+    const effectiveHeight = window.innerHeight / props.zoomLevel;
+
+    const maxX = effectiveWidth - 50; // 付箋が見切れないための余白
+    const maxY = effectiveHeight - 50;
 
     newPosition.x = Math.max(20, Math.min(maxX, newPosition.x));
     newPosition.y = Math.max(20, Math.min(maxY, newPosition.y));
