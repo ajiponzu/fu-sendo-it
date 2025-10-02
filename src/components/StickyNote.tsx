@@ -28,6 +28,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     props.todo.deadline ? props.todo.deadline.toISOString().split("T")[0] : ""
   );
   const [editProgress, setEditProgress] = createSignal(props.todo.progress);
+  const [justFinishedDrag, setJustFinishedDrag] = createSignal(false); // ドラッグ終了直後フラグ
 
   const handleSave = () => {
     todoStore.updateTodo(props.todo.id, {
@@ -119,7 +120,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
   };
 
   // マウスアップ終了
-  const handleMouseUp = (e: MouseEvent) => {
+  const handleMouseUp = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
 
@@ -127,19 +128,27 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       // ドラッグ終了時に最終位置を保存
       todoStore.updatePosition(props.todo.id, tempPosition());
       setIsDragging(false);
-    } else if (!hasMouseMoved()) {
-      // クリックと判定された場合は編集モードに
-      // ボタンやカラーピッカー以外の領域でのクリックのみ編集開始
-      const target = e.target as HTMLElement;
-      const isButton = target.tagName === "BUTTON" || target.closest("button");
-      const isColorPicker = target.closest(".sticky-note__color-picker");
+      setJustFinishedDrag(true);
 
-      if (!isButton && !isColorPicker && !isEditing()) {
-        setIsEditing(true);
-      }
+      // 100ms後にドラッグ終了フラグをリセット
+      setTimeout(() => setJustFinishedDrag(false), 100);
     }
 
     setHasMouseMoved(false);
+  };
+
+  // 編集領域をクリックした時の処理
+  const handleEditAreaClick = (e: MouseEvent) => {
+    // ドラッグ終了直後の場合はクリックイベントを無視
+    if (justFinishedDrag() || isDragging() || hasMouseMoved() || isEditing()) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    setIsEditing(true);
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   // ランダムな回転角度を生成（付箋らしい効果）
@@ -197,7 +206,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
           <Show
             when={isEditing()}
             fallback={
-              <div>
+              <div
+                class="sticky-note__editable-area"
+                onClick={handleEditAreaClick}
+              >
                 <h3 class="sticky-note__title">
                   {props.todo.title || "Untitled"}
                 </h3>

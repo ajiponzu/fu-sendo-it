@@ -7,7 +7,7 @@
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   position: absolute;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   flex-direction: column;
   transform: rotate(0deg);
@@ -26,6 +26,10 @@
   transform: scale(1.02);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   transition: none;
+}
+
+.sticky-note--dragging * {
+  cursor: grabbing !important;
 }
 
 @keyframes slideIn {
@@ -138,6 +142,19 @@
 .sticky-note__content {
   flex: 1;
   margin-bottom: 10px;
+}
+
+/* 編集可能領域のスタイル */
+.sticky-note__editable-area {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sticky-note__editable-area:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 .sticky-note__title {
