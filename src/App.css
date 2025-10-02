@@ -1,0 +1,248 @@
+/* App.css - 付箋形式のTodoアプリのスタイル */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.app__header {
+  text-align: center;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.app__title {
+  margin: 0 0 10px 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.app__subtitle {
+  margin: 0 0 25px 0;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+}
+
+.app__stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.app__stat {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.app__stat strong {
+  color: white;
+  font-weight: bold;
+}
+
+.app__filters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.app__filter-btn {
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.app__filter-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.app__filter-btn--active {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.app__clear-completed {
+  padding: 8px 16px;
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  background: rgba(244, 67, 54, 0.2);
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.app__clear-completed:hover {
+  background: rgba(244, 67, 54, 0.4);
+  transform: translateY(-1px);
+}
+
+.app__backup-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  background: rgba(76, 175, 80, 0.2);
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+.app__backup-btn:hover {
+  background: rgba(76, 175, 80, 0.4);
+  transform: translateY(-1px);
+}
+
+.app__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  color: white;
+}
+
+.app__loading h2 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.app__loading p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.app__workspace {
+  position: relative;
+  min-height: calc(100vh - 200px);
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ドラッグ中のスタイル */
+.sticky-note--dragging {
+  z-index: 1000;
+  transform: scale(1.02) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+  transition: none !important;
+}
+
+.app__empty {
+  text-align: center;
+  margin: 60px 0;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.app__empty-message {
+  margin: 0;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .app {
+    padding: 15px;
+  }
+
+  .app__header {
+    padding: 20px;
+  }
+
+  .app__title {
+    font-size: 2rem;
+  }
+
+  .app__stats {
+    gap: 15px;
+    justify-content: space-around;
+  }
+
+  .app__stat {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .app__workspace {
+    min-height: calc(100vh - 160px);
+  }
+}
+
+@media (max-width: 480px) {
+  .app__header {
+    padding: 15px;
+  }
+
+  .app__title {
+    font-size: 1.8rem;
+  }
+
+  .app__subtitle {
+    font-size: 1rem;
+  }
+
+  .app__workspace {
+    min-height: calc(100vh - 120px);
+  }
+
+  .app__stats {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .app__filters {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .app__filter-btn {
+    width: 150px;
+  }
+}
