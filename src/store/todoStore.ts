@@ -71,6 +71,38 @@ export const todoStore = {
     await todoStore.saveToStorage();
   },
 
+  // 付箋を整理配置する機能
+  arrangeNotes: async () => {
+    const todos = todoStore.todos();
+    if (todos.length === 0) return;
+
+    // グリッド配置の設定
+    const cols = Math.ceil(Math.sqrt(todos.length));
+    const noteWidth = 270; // 付箋幅 + マージン
+    const noteHeight = 250; // 付箋高さ + マージン
+    const startX = 50;
+    const startY = 50;
+
+    // 作成日時順でソート
+    const sortedTodos = [...todos].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    // グリッド状に配置
+    sortedTodos.forEach((todo, index) => {
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+
+      const newPosition = {
+        x: startX + col * noteWidth,
+        y: startY + row * noteHeight,
+      };
+
+      todoStore.updatePosition(todo.id, newPosition);
+    });
+  },
+
   // Tauriファイルシステムから読み込み
   loadFromStorage: async () => {
     setIsLoading(true);

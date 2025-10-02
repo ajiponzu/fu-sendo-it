@@ -45,6 +45,17 @@ function App() {
     };
   });
 
+  // ズームをリセットする関数
+  const resetZoom = () => {
+    setZoomLevel(1);
+    setTransformOrigin("50% 50%");
+  };
+
+  // 付箋を整理配置する関数
+  const arrangeNotes = async () => {
+    await todoStore.arrangeNotes();
+  };
+
   return (
     <main class="app">
       <Show
@@ -109,6 +120,23 @@ function App() {
         <div class="app__zoom-indicator">
           ズーム: {Math.round(zoomLevel() * 100)}%
           <div class="app__zoom-hint">Ctrl + マウスホイールでズーム</div>
+        </div>
+
+        <div class="app__controls">
+          <button
+            class="app__control-btn app__control-btn--reset"
+            onClick={resetZoom}
+            title="ズームをリセット"
+          >
+            🔍 ズームリセット
+          </button>
+          <button
+            class="app__control-btn app__control-btn--arrange"
+            onClick={arrangeNotes}
+            title="付箋を整理配置"
+          >
+            📐 付箋整理
+          </button>
         </div>
 
         <AddTodoButton />
