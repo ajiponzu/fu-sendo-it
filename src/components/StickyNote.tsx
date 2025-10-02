@@ -14,6 +14,11 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
   const [isDragging, setIsDragging] = createSignal(false);
   const [dragOffset, setDragOffset] = createSignal({ x: 0, y: 0 });
   const [tempPosition, setTempPosition] = createSignal({ x: 0, y: 0 });
+  const [mouseDownPosition, setMouseDownPosition] = createSignal({
+    x: 0,
+    y: 0,
+  });
+  const [hasMouseMoved, setHasMouseMoved] = createSignal(false);
 
   const handleSave = () => {
     todoStore.updateTodo(props.todo.id, {
@@ -39,12 +44,15 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     todoStore.updateTodo(props.todo.id, { color });
   };
 
-  // ドラッグ開始
+  // マウスダウン開始
   const handleMouseDown = (e: MouseEvent) => {
     if (isEditing()) return; // 編集中はドラッグ無効
 
-    setIsDragging(true);
+    // マウスダウン位置を記録
+    setMouseDownPosition({ x: e.clientX, y: e.clientY });
+    setHasMouseMoved(false);
     setTempPosition({ x: props.todo.position.x, y: props.todo.position.y });
+
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
@@ -56,8 +64,19 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     e.preventDefault();
   };
 
-  // ドラッグ中
+  // マウス移動中
   const handleMouseMove = (e: MouseEvent) => {
+    const moveDistance = Math.sqrt(
+      Math.pow(e.clientX - mouseDownPosition().x, 2) +
+        Math.pow(e.clientY - mouseDownPosition().y, 2)
+    );
+
+    // 5px以上移動したらドラッグ開始
+    if (moveDistance > 5 && !hasMouseMoved()) {
+      setHasMouseMoved(true);
+      setIsDragging(true);
+    }
+
     if (!isDragging()) return;
 
     const newPosition = {
@@ -76,15 +95,28 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     setTempPosition(newPosition);
   };
 
-  // ドラッグ終了
-  const handleMouseUp = () => {
+  // マウスアップ終了
+  const handleMouseUp = (e: MouseEvent) => {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+
     if (isDragging()) {
       // ドラッグ終了時に最終位置を保存
       todoStore.updatePosition(props.todo.id, tempPosition());
+      setIsDragging(false);
+    } else if (!hasMouseMoved()) {
+      // クリックと判定された場合は編集モードに
+      // ボタンやカラーピッカー以外の領域でのクリックのみ編集開始
+      const target = e.target as HTMLElement;
+      const isButton = target.tagName === "BUTTON" || target.closest("button");
+      const isColorPicker = target.closest(".sticky-note__color-picker");
+
+      if (!isButton && !isColorPicker && !isEditing()) {
+        setIsEditing(true);
+      }
     }
-    setIsDragging(false);
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
+
+    setHasMouseMoved(false);
   };
 
   // ランダムな回転角度を生成（付箋らしい効果）
@@ -103,7 +135,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
         position: "absolute",
         left: `${isDragging() ? tempPosition().x : props.todo.position.x}px`,
         top: `${isDragging() ? tempPosition().y : props.todo.position.y}px`,
-        cursor: isDragging() ? "grabbing" : "grab",
+        cursor: isDragging() ? "grabbing" : "pointer",
       }}
       onMouseDown={handleMouseDown}
     >
@@ -133,10 +165,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
           when={isEditing()}
           fallback={
             <div>
-              <h3 class="sticky-note__title" onClick={() => setIsEditing(true)}>
+              <h3 class="sticky-note__title">
                 {props.todo.title || "Untitled"}
               </h3>
-              <p class="sticky-note__text" onClick={() => setIsEditing(true)}>
+              <p class="sticky-note__text">
                 {props.todo.content || "クリックして編集..."}
               </p>
             </div>

@@ -7,7 +7,7 @@
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   position: absolute;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: grab;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   transform: rotate(0deg);
@@ -21,7 +21,7 @@
 
 /* ドラッグ中のスタイル */
 .sticky-note--dragging {
-  cursor: grabbing;
+  cursor: grabbing !important;
   z-index: 1000;
   transform: scale(1.02);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
