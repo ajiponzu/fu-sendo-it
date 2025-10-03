@@ -21,6 +21,9 @@ function App() {
   });
   const [dragStartOffset, setDragStartOffset] = createSignal({ x: 0, y: 0 });
 
+  // 全体のドラッグ状態管理（背景ドラッグか付箋ドラッグかを区別）
+  const [isAnyDragging, setIsAnyDragging] = createSignal(false);
+
   onMount(() => {
     todoStore.loadFromStorage();
 
@@ -74,6 +77,7 @@ function App() {
     }
 
     setIsDraggingView(true);
+    setIsAnyDragging(true);
     setDragStartPosition({ x: e.clientX, y: e.clientY });
     setDragStartOffset(viewOffset());
 
@@ -98,6 +102,7 @@ function App() {
 
   const handleMouseUp = () => {
     setIsDraggingView(false);
+    setIsAnyDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
@@ -168,7 +173,14 @@ function App() {
               }
             >
               <For each={todoStore.todos()}>
-                {(todo) => <StickyNote todo={todo} zoomLevel={zoomLevel()} />}
+                {(todo) => (
+                  <StickyNote
+                    todo={todo}
+                    zoomLevel={zoomLevel()}
+                    onDragStart={() => setIsAnyDragging(true)}
+                    onDragEnd={() => setIsAnyDragging(false)}
+                  />
+                )}
               </For>
             </Show>
           </div>
@@ -203,6 +215,24 @@ function App() {
         </div>
 
         <AddTodoButton />
+
+        {/* ドラッグ中の座標表示 */}
+        <Show when={isAnyDragging()}>
+          <div class="app__drag-coordinates">
+            <div class="app__drag-coordinate app__drag-coordinate--left">
+              <div class="app__coordinate-label">X</div>
+              <div class="app__coordinate-value">
+                {Math.round(viewOffset().x)}
+              </div>
+            </div>
+            <div class="app__drag-coordinate app__drag-coordinate--right">
+              <div class="app__coordinate-label">Y</div>
+              <div class="app__coordinate-value">
+                {Math.round(viewOffset().y)}
+              </div>
+            </div>
+          </div>
+        </Show>
       </Show>
     </main>
   );

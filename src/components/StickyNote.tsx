@@ -8,6 +8,8 @@ import "./StickyNote.css";
 interface StickyNoteProps {
   todo: Todo;
   zoomLevel: number;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 const StickyNote: Component<StickyNoteProps> = (props) => {
@@ -102,6 +104,8 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     if (moveDistance > 5 && !hasMouseMoved()) {
       setHasMouseMoved(true);
       setIsDragging(true);
+      // 親コンポーネントにドラッグ開始を通知
+      props.onDragStart?.();
     }
 
     if (!isDragging()) return;
@@ -130,6 +134,8 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       // ドラッグ終了時に最終位置を保存
       todoStore.updatePosition(props.todo.id, tempPosition());
       setIsDragging(false);
+      // 親コンポーネントにドラッグ終了を通知
+      props.onDragEnd?.();
     }
 
     setHasMouseMoved(false);

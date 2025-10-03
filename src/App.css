@@ -366,3 +366,62 @@ body {
     width: 150px;
   }
 }
+
+/* ドラッグ中の座標表示 */
+.app__drag-coordinates {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.app__drag-coordinate {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: coordinateSlide 0.2s ease-out;
+}
+
+.app__drag-coordinate--left {
+  left: 20px;
+}
+
+.app__drag-coordinate--right {
+  right: 20px;
+}
+
+.app__coordinate-label {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.app__coordinate-value {
+  font-size: 16px;
+  text-align: center;
+}
+
+@keyframes coordinateSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
