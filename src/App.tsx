@@ -33,6 +33,180 @@ function App() {
   // UIコントロールの表示・非表示管理
   const [isUIVisible, setIsUIVisible] = createSignal(true);
 
+  // Markdown生成・保存機能
+  const generateMarkdownReport = () => {
+    const todos = todoStore.todos();
+    const now = new Date();
+
+    // 基本統計
+    const totalTodos = todos.length;
+    const completedTodos = todos.filter(
+      (todo) => (todo.progress || 0) >= 100
+    ).length;
+    const inProgressTodos = todos.filter(
+      (todo) => (todo.progress || 0) > 0 && (todo.progress || 0) < 100
+    ).length;
+    const notStartedTodos = todos.filter(
+      (todo) => (todo.progress || 0) === 0
+    ).length;
+    const todosWithDeadline = todos.filter((todo) => todo.deadline).length;
+
+    // 期限関連統計
+    const overdueTodos = todos.filter((todo) => {
+      if (!todo.deadline) return false;
+      return new Date(todo.deadline) < now;
+    }).length;
+
+    const urgentTodos = todos.filter((todo) => {
+      if (!todo.deadline) return false;
+      const diffTime = new Date(todo.deadline).getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 3 && diffDays >= 0;
+    }).length;
+
+    // 進捗率順にソート
+    const sortedByProgress = [...todos].sort(
+      (a, b) => (b.progress || 0) - (a.progress || 0)
+    );
+
+    // 期限順にソート
+    const sortedByDeadline = todos
+      .filter((todo) => todo.deadline)
+      .sort(
+        (a, b) =>
+          new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()
+      );
+
+    // Markdownコンテンツ生成
+    let markdown = `# 📝 付箋アプリ - 進捗レポート
+
+生成日時: ${now.toLocaleString("ja-JP")}
+
+## 📊 全体統計
+
+- **総付箋数**: ${totalTodos}
+- **完了済み**: ${completedTodos} (${
+      totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0
+    }%)
+- **進行中**: ${inProgressTodos}
+- **未着手**: ${notStartedTodos}
+- **期限設定済み**: ${todosWithDeadline}
+- **期限超過**: ${overdueTodos} ⚠️
+- **緊急 (3日以内)**: ${urgentTodos} 🔥
+
+## 🎯 進捗率順一覧
+
+`;
+
+    sortedByProgress.forEach((todo, index) => {
+      const progress = todo.progress || 0;
+      const progressBar =
+        "█".repeat(Math.floor(progress / 10)) +
+        "░".repeat(10 - Math.floor(progress / 10));
+
+      markdown += `### ${index + 1}. ${todo.title}
+
+- **進捗率**: ${progress}% \`${progressBar}\`
+- **色**: ${todo.color}
+- **作成日**: ${new Date(todo.createdAt).toLocaleDateString("ja-JP")}
+- **更新日**: ${new Date(todo.updatedAt).toLocaleDateString("ja-JP")}
+${
+  todo.deadline
+    ? `- **期限**: ${new Date(todo.deadline).toLocaleDateString("ja-JP")}`
+    : ""
+}
+${todo.content ? `- **内容**: ${todo.content}` : ""}
+
+`;
+    });
+
+    if (sortedByDeadline.length > 0) {
+      markdown += `## ⏰ 期限順一覧
+
+`;
+
+      sortedByDeadline.forEach((todo, index) => {
+        const deadlineDate = new Date(todo.deadline!);
+        const diffTime = deadlineDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        let statusEmoji = "";
+        let statusText = "";
+
+        if (diffDays < 0) {
+          statusEmoji = "🔴";
+          statusText = `${Math.abs(diffDays)}日超過`;
+        } else if (diffDays === 0) {
+          statusEmoji = "🟠";
+          statusText = "今日期限";
+        } else if (diffDays <= 3) {
+          statusEmoji = "🔥";
+          statusText = `残り${diffDays}日`;
+        } else if (diffDays <= 7) {
+          statusEmoji = "🟡";
+          statusText = `残り${diffDays}日`;
+        } else {
+          statusEmoji = "🟢";
+          statusText = `残り${diffDays}日`;
+        }
+
+        markdown += `### ${index + 1}. ${todo.title} ${statusEmoji}
+
+- **期限**: ${deadlineDate.toLocaleDateString("ja-JP")} (${statusText})
+- **進捗率**: ${todo.progress || 0}%
+- **色**: ${todo.color}
+${todo.content ? `- **内容**: ${todo.content}` : ""}
+
+`;
+      });
+    }
+
+    markdown += `## 📈 色別分布
+
+`;
+
+    const colorCounts = todos.reduce((acc, todo) => {
+      acc[todo.color] = (acc[todo.color] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    Object.entries(colorCounts).forEach(([color, count]) => {
+      const percentage =
+        totalTodos > 0 ? Math.round((count / totalTodos) * 100) : 0;
+      markdown += `- **${color}**: ${count}個 (${percentage}%)
+`;
+    });
+
+    markdown += `
+---
+*このレポートは付箋アプリから自動生成されました*
+`;
+
+    return markdown;
+  };
+
+  // Markdown保存機能
+  const saveMarkdownReport = async () => {
+    try {
+      const markdown = generateMarkdownReport();
+      const blob = new Blob([markdown], {
+        type: "text/markdown;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `付箋レポート_${new Date().toISOString().split("T")[0]}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("レポート保存エラー:", error);
+      alert("レポートの保存に失敗しました");
+    }
+  };
+
   onMount(() => {
     todoStore.loadFromStorage();
 
@@ -127,17 +301,32 @@ function App() {
 
   return (
     <main class="app">
-      {/* UI表示切り替えボタン（常に表示） */}
-      <button
-        class="app__ui-toggle"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsUIVisible(!isUIVisible());
-        }}
-        title={isUIVisible() ? "UIを非表示" : "UIを表示"}
-      >
-        {isUIVisible() ? "▲ UI非表示" : "▼ UI表示"}
-      </button>
+      {/* ヘッダーボタン群 */}
+      <div class="app__header-buttons">
+        {/* UI表示切り替えボタン */}
+        <button
+          class="app__ui-toggle"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsUIVisible(!isUIVisible());
+          }}
+          title={isUIVisible() ? "UIを非表示" : "UIを表示"}
+        >
+          {isUIVisible() ? "▲ UI非表示" : "▼ UI表示"}
+        </button>
+
+        {/* Markdownレポート出力ボタン */}
+        <button
+          class="app__markdown-export"
+          onClick={(e) => {
+            e.stopPropagation();
+            saveMarkdownReport();
+          }}
+          title="進捗レポートをMarkdown形式で保存"
+        >
+          📄 レポート出力
+        </button>
+      </div>
 
       {/* 表示モード切り替えボタン */}
       <Show when={isUIVisible()}>
