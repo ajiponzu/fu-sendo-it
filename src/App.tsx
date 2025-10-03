@@ -38,146 +38,136 @@ function App() {
     const todos = todoStore.todos();
     const now = new Date();
 
-    // 基本統計
-    const totalTodos = todos.length;
-    const completedTodos = todos.filter(
-      (todo) => (todo.progress || 0) >= 100
-    ).length;
-    const inProgressTodos = todos.filter(
-      (todo) => (todo.progress || 0) > 0 && (todo.progress || 0) < 100
-    ).length;
-    const notStartedTodos = todos.filter(
-      (todo) => (todo.progress || 0) === 0
-    ).length;
-    const todosWithDeadline = todos.filter((todo) => todo.deadline).length;
-
-    // 期限関連統計
-    const overdueTodos = todos.filter((todo) => {
-      if (!todo.deadline) return false;
-      return new Date(todo.deadline) < now;
-    }).length;
-
-    const urgentTodos = todos.filter((todo) => {
-      if (!todo.deadline) return false;
-      const diffTime = new Date(todo.deadline).getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 3 && diffDays >= 0;
-    }).length;
-
-    // 進捗率順にソート
-    const sortedByProgress = [...todos].sort(
-      (a, b) => (b.progress || 0) - (a.progress || 0)
-    );
-
-    // 期限順にソート
-    const sortedByDeadline = todos
-      .filter((todo) => todo.deadline)
-      .sort(
-        (a, b) =>
-          new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()
-      );
-
     // Markdownコンテンツ生成
-    let markdown = `# 📝 付箋アプリ - 進捗レポート
+    let markdown = `# 📝 タスク管理レポート
 
 生成日時: ${now.toLocaleString("ja-JP")}
 
-## 📊 全体統計
+## 📊 タスク情報マトリックス
 
-- **総付箋数**: ${totalTodos}
-- **完了済み**: ${completedTodos} (${
-      totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0
-    }%)
-- **進行中**: ${inProgressTodos}
-- **未着手**: ${notStartedTodos}
-- **期限設定済み**: ${todosWithDeadline}
-- **期限超過**: ${overdueTodos} ⚠️
-- **緊急 (3日以内)**: ${urgentTodos} 🔥
-
-## 🎯 進捗率順一覧
-
+| タスクタイトル | 進捗率 | 期限 | 内容 |
+|---|---|---|---|
 `;
 
-    sortedByProgress.forEach((todo, index) => {
-      const progress = todo.progress || 0;
-      const progressBar =
-        "█".repeat(Math.floor(progress / 10)) +
-        "░".repeat(10 - Math.floor(progress / 10));
+    todos.forEach((todo) => {
+      const title = todo.title.replace(/\|/g, "\\|"); // パイプ文字をエスケープ
+      const progress = `${todo.progress || 0}%`;
+      const deadline = todo.deadline
+        ? new Date(todo.deadline).toLocaleDateString("ja-JP")
+        : "-";
+      const content = todo.content
+        ? todo.content.replace(/\|/g, "\\|").replace(/\n/g, " ")
+        : "-";
 
-      markdown += `### ${index + 1}. ${todo.title}
-
-- **進捗率**: ${progress}% \`${progressBar}\`
-- **色**: ${todo.color}
-- **作成日**: ${new Date(todo.createdAt).toLocaleDateString("ja-JP")}
-- **更新日**: ${new Date(todo.updatedAt).toLocaleDateString("ja-JP")}
-${
-  todo.deadline
-    ? `- **期限**: ${new Date(todo.deadline).toLocaleDateString("ja-JP")}`
-    : ""
-}
-${todo.content ? `- **内容**: ${todo.content}` : ""}
-
-`;
+      markdown += `| ${title} | ${progress} | ${deadline} | ${content} |\n`;
     });
 
-    if (sortedByDeadline.length > 0) {
-      markdown += `## ⏰ 期限順一覧
+    // タスク進捗ダッシュボード
+    markdown += `\n## 🎯 タスク進捗ダッシュボード
 
 `;
 
-      sortedByDeadline.forEach((todo, index) => {
-        const deadlineDate = new Date(todo.deadline!);
+    // 期限でソートしたタスク（緊急度順）
+    const sortedTodos = todos.sort((a, b) => {
+      // 期限超過が最優先
+      const aOverdue = a.deadline && new Date(a.deadline) < now;
+      const bOverdue = b.deadline && new Date(b.deadline) < now;
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+
+      // 次に期限の近い順
+      if (!a.deadline && !b.deadline) return 0;
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    });
+
+    sortedTodos.forEach((todo, index) => {
+      const progress = todo.progress || 0;
+
+      // ステータス絵文字
+      let statusEmoji = "⚪"; // 未着手
+      if (progress >= 100) statusEmoji = "✅"; // 完了
+      else if (progress >= 75) statusEmoji = "🟢"; // 順調
+      else if (progress >= 50) statusEmoji = "🟡"; // 進行中
+      else if (progress >= 25) statusEmoji = "🟠"; // 開始済み
+      else if (progress > 0) statusEmoji = "🔵"; // 少し進行
+
+      // 期限ステータス
+      let deadlineEmoji = "📅";
+      let deadlineText = "期限なし";
+      if (todo.deadline) {
+        const deadlineDate = new Date(todo.deadline);
         const diffTime = deadlineDate.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        let statusEmoji = "";
-        let statusText = "";
-
         if (diffDays < 0) {
-          statusEmoji = "🔴";
-          statusText = `${Math.abs(diffDays)}日超過`;
+          deadlineEmoji = "🚨";
+          deadlineText = `${Math.abs(diffDays)}日超過`;
         } else if (diffDays === 0) {
-          statusEmoji = "🟠";
-          statusText = "今日期限";
+          deadlineEmoji = "⏰";
+          deadlineText = "今日期限";
         } else if (diffDays <= 3) {
-          statusEmoji = "🔥";
-          statusText = `残り${diffDays}日`;
+          deadlineEmoji = "🔥";
+          deadlineText = `残り${diffDays}日`;
         } else if (diffDays <= 7) {
-          statusEmoji = "🟡";
-          statusText = `残り${diffDays}日`;
+          deadlineEmoji = "⚡";
+          deadlineText = `残り${diffDays}日`;
         } else {
-          statusEmoji = "🟢";
-          statusText = `残り${diffDays}日`;
+          deadlineEmoji = "📅";
+          deadlineText = `残り${diffDays}日`;
         }
+      }
 
-        markdown += `### ${index + 1}. ${todo.title} ${statusEmoji}
+      // 進捗バー（視覚的改善版）
+      const segments = Math.floor(progress / 10);
+      let progressBar = "";
+      for (let i = 0; i < 10; i++) {
+        if (i < segments) {
+          if (progress >= 100) progressBar += "🟩"; // 完了
+          else if (progress >= 75) progressBar += "🟨"; // 順調
+          else if (progress >= 50) progressBar += "🟧"; // 進行中
+          else progressBar += "🟦"; // 開始済み
+        } else {
+          progressBar += "⬜"; // 未完了
+        }
+      }
 
-- **期限**: ${deadlineDate.toLocaleDateString("ja-JP")} (${statusText})
-- **進捗率**: ${todo.progress || 0}%
-- **色**: ${todo.color}
-${todo.content ? `- **内容**: ${todo.content}` : ""}
+      markdown += `### ${index + 1}. ${statusEmoji} ${todo.title}
 
-`;
-      });
-    }
+**進捗**: ${progress}% ${progressBar}
+**期限**: ${deadlineEmoji} ${deadlineText}
+${
+  todo.deadline
+    ? `**期限日**: ${new Date(todo.deadline).toLocaleDateString("ja-JP")}`
+    : ""
+}
 
-    markdown += `## 📈 色別分布
+---
 
-`;
-
-    const colorCounts = todos.reduce((acc, todo) => {
-      acc[todo.color] = (acc[todo.color] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    Object.entries(colorCounts).forEach(([color, count]) => {
-      const percentage =
-        totalTodos > 0 ? Math.round((count / totalTodos) * 100) : 0;
-      markdown += `- **${color}**: ${count}個 (${percentage}%)
 `;
     });
 
-    markdown += `
+    markdown += `### 📊 ステータス凡例
+
+**進捗状況**:
+- ✅ 完了 (100%)
+- 🟢 順調 (75%以上)
+- 🟡 進行中 (50%以上)
+- 🟠 開始済み (25%以上)
+- 🔵 少し進行 (1%以上)
+- ⚪ 未着手 (0%)
+
+**期限状況**:
+- 🚨 期限超過
+- ⏰ 今日期限
+- 🔥 残り3日以内
+- ⚡ 残り7日以内
+- 📅 期限あり/なし
+
+**進捗バー**:
+- 🟩 完了部分 / 🟨 順調部分 / 🟧 進行部分 / 🟦 開始部分 / ⬜ 未完了部分
+
 ---
 *このレポートは付箋アプリから自動生成されました*
 `;
