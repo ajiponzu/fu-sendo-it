@@ -33,6 +33,10 @@ function App() {
   // UIコントロールの表示・非表示管理
   const [isUIVisible, setIsUIVisible] = createSignal(true);
 
+  // Markdown出力ウィザード管理
+  const [showExportWizard, setShowExportWizard] = createSignal(false);
+  const [exportPath, setExportPath] = createSignal("");
+
   // Markdown生成・保存機能
   const generateMarkdownReport = () => {
     const todos = todoStore.todos();
@@ -197,6 +201,87 @@ ${
     }
   };
 
+  // ディレクトリ選択機能
+  const selectDirectory = async () => {
+    try {
+      // HTML5のディレクトリ選択APIを使用
+      if ("showDirectoryPicker" in window) {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        const fileName = `付箋レポート_${
+          new Date().toISOString().split("T")[0]
+        }.md`;
+        setExportPath(`${dirHandle.name}/${fileName}`);
+      } else {
+        // フォールバック: ファイル選択から推測
+        const input = document.createElement("input");
+        input.type = "file";
+        input.webkitdirectory = true;
+        input.onchange = (e) => {
+          const files = (e.target as HTMLInputElement).files;
+          if (files && files.length > 0) {
+            const dirPath = files[0].webkitRelativePath.split("/")[0];
+            const fileName = `付箋レポート_${
+              new Date().toISOString().split("T")[0]
+            }.md`;
+            setExportPath(`${dirPath}/${fileName}`);
+          }
+        };
+        input.click();
+      }
+    } catch (error) {
+      console.error("ディレクトリ選択エラー:", error);
+      alert("ディレクトリの選択に失敗しました。手動でパスを入力してください。");
+    }
+  };
+
+  // Markdown保存機能（ウィザード版）
+  const saveMarkdownReportFromWizard = async () => {
+    try {
+      const markdown = generateMarkdownReport();
+      const blob = new Blob([markdown], {
+        type: "text/markdown;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+
+      // ユーザーが指定したパスがある場合はそのファイル名を使用
+      if (exportPath()) {
+        const pathParts = exportPath().split("/");
+        const fileName = pathParts[pathParts.length - 1];
+        a.download =
+          fileName ||
+          `付箋レポート_${new Date().toISOString().split("T")[0]}.md`;
+      } else {
+        a.download = `付箋レポート_${
+          new Date().toISOString().split("T")[0]
+        }.md`;
+      }
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // 成功メッセージ
+      alert(`レポートをダウンロードしました。\nファイル名: ${a.download}`);
+
+      // ウィザードを閉じる
+      setShowExportWizard(false);
+      setExportPath("");
+    } catch (error) {
+      console.error("レポート保存エラー:", error);
+      alert("レポートの保存に失敗しました");
+    }
+  };
+
+  // ウィザードを開く
+  const openExportWizard = () => {
+    setExportPath(""); // パスをリセット
+    setShowExportWizard(true);
+  };
+
   onMount(() => {
     todoStore.loadFromStorage();
 
@@ -310,7 +395,7 @@ ${
           class="app__markdown-export"
           onClick={(e) => {
             e.stopPropagation();
-            saveMarkdownReport();
+            openExportWizard();
           }}
           title="進捗レポートをMarkdown形式で保存"
         >
@@ -476,6 +561,55 @@ ${
         <Show when={viewMode() === "progress"}>
           <ProgressView />
         </Show>
+      </Show>
+
+      {/* Markdown出力ウィザード */}
+      <Show when={showExportWizard()}>
+        <div class="app__export-wizard-overlay">
+          <div class="app__export-wizard">
+            <h3>📄 レポート出力設定</h3>
+            <p>Markdownレポートの保存先を指定してください</p>
+
+            <div class="app__export-path-group">
+              <label for="exportPath">保存先パス:</label>
+              <div class="app__export-path-input">
+                <input
+                  id="exportPath"
+                  type="text"
+                  class="app__export-path-field"
+                  value={exportPath()}
+                  onInput={(e) => setExportPath(e.currentTarget.value)}
+                  placeholder="保存先ディレクトリを入力または参照で選択"
+                />
+                <button
+                  class="app__export-browse-btn"
+                  onClick={selectDirectory}
+                  title="ディレクトリを参照"
+                >
+                  📁 参照
+                </button>
+              </div>
+            </div>
+
+            <div class="app__export-wizard-buttons">
+              <button
+                class="app__export-wizard-btn app__export-wizard-btn--cancel"
+                onClick={() => {
+                  setShowExportWizard(false);
+                  setExportPath("");
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                class="app__export-wizard-btn app__export-wizard-btn--ok"
+                onClick={saveMarkdownReportFromWizard}
+              >
+                OK - 保存
+              </button>
+            </div>
+          </div>
+        </div>
       </Show>
     </main>
   );
