@@ -201,71 +201,46 @@ ${
     }
   };
 
-  // ディレクトリ選択機能
+  // ディレクトリ選択機能（Rustバックエンド）
   const selectDirectory = async () => {
     try {
-      // HTML5のディレクトリ選択APIを使用
-      if ("showDirectoryPicker" in window) {
-        const dirHandle = await (window as any).showDirectoryPicker();
-        const fileName = `付箋レポート_${
-          new Date().toISOString().split("T")[0]
-        }.md`;
-        setExportPath(`${dirHandle.name}/${fileName}`);
-      } else {
-        // フォールバック: ファイル選択から推測
-        const input = document.createElement("input");
-        input.type = "file";
-        input.webkitdirectory = true;
-        input.onchange = (e) => {
-          const files = (e.target as HTMLInputElement).files;
-          if (files && files.length > 0) {
-            const dirPath = files[0].webkitRelativePath.split("/")[0];
-            const fileName = `付箋レポート_${
-              new Date().toISOString().split("T")[0]
-            }.md`;
-            setExportPath(`${dirPath}/${fileName}`);
-          }
-        };
-        input.click();
-      }
+      const { invoke } = await import("@tauri-apps/api/core");
+      const dirPath = await invoke("select_directory");
+      const fileName = `付箋レポート_${
+        new Date().toISOString().split("T")[0]
+      }.md`;
+      setExportPath(`${dirPath}/${fileName}`);
     } catch (error) {
       console.error("ディレクトリ選択エラー:", error);
-      alert("ディレクトリの選択に失敗しました。手動でパスを入力してください。");
+      alert("ディレクトリの選択に失敗しました。");
     }
   };
 
-  // Markdown保存機能（ウィザード版）
+  // Markdown保存機能（ウィザード版、Rustバックエンド）
   const saveMarkdownReportFromWizard = async () => {
     try {
       const markdown = generateMarkdownReport();
-      const blob = new Blob([markdown], {
-        type: "text/markdown;charset=utf-8",
-      });
-      const url = URL.createObjectURL(blob);
+      const { invoke } = await import("@tauri-apps/api/core");
 
-      const a = document.createElement("a");
-      a.href = url;
+      const fileName = `付箋レポート_${
+        new Date().toISOString().split("T")[0]
+      }.md`;
 
-      // ユーザーが指定したパスがある場合はそのファイル名を使用
       if (exportPath()) {
-        const pathParts = exportPath().split("/");
-        const fileName = pathParts[pathParts.length - 1];
-        a.download =
-          fileName ||
-          `付箋レポート_${new Date().toISOString().split("T")[0]}.md`;
+        // ユーザーが指定したパスに保存
+        await invoke("write_file_to_path", {
+          filePath: exportPath(),
+          content: markdown,
+        });
+        alert(`レポートを保存しました:\n${exportPath()}`);
       } else {
-        a.download = `付箋レポート_${
-          new Date().toISOString().split("T")[0]
-        }.md`;
+        // 保存ダイアログを表示
+        const savedPath = await invoke("save_markdown_file", {
+          content: markdown,
+          filename: fileName,
+        });
+        alert(`レポートを保存しました:\n${savedPath}`);
       }
-
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // 成功メッセージ
-      alert(`レポートをダウンロードしました。\nファイル名: ${a.download}`);
 
       // ウィザードを閉じる
       setShowExportWizard(false);
