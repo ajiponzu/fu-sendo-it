@@ -568,19 +568,19 @@ ${
 
             <div class="app__export-wizard-buttons">
               <button
+                class="app__export-wizard-btn app__export-wizard-btn--ok"
+                onClick={saveMarkdownReportFromWizard}
+              >
+                💾 保存
+              </button>
+              <button
                 class="app__export-wizard-btn app__export-wizard-btn--cancel"
                 onClick={() => {
                   setShowExportWizard(false);
                   setExportPath("");
                 }}
               >
-                キャンセル
-              </button>
-              <button
-                class="app__export-wizard-btn app__export-wizard-btn--ok"
-                onClick={saveMarkdownReportFromWizard}
-              >
-                OK - 保存
+                ❌ キャンセル
               </button>
             </div>
           </div>
