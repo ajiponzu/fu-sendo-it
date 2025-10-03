@@ -30,6 +30,9 @@ function App() {
     "workspace"
   );
 
+  // UIコントロールの表示・非表示管理
+  const [isUIVisible, setIsUIVisible] = createSignal(true);
+
   onMount(() => {
     todoStore.loadFromStorage();
 
@@ -124,31 +127,45 @@ function App() {
 
   return (
     <main class="app">
+      {/* UI表示切り替えボタン（常に表示） */}
+      <button
+        class="app__ui-toggle"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsUIVisible(!isUIVisible());
+        }}
+        title={isUIVisible() ? "UIを非表示" : "UIを表示"}
+      >
+        {isUIVisible() ? "▲ UI非表示" : "▼ UI表示"}
+      </button>
+
       {/* 表示モード切り替えボタン */}
-      <div class="app__mode-switcher">
-        <button
-          class={`app__mode-btn ${
-            viewMode() === "workspace" ? "app__mode-btn--active" : ""
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setViewMode("workspace");
-          }}
-        >
-          📝 ワークスペース
-        </button>
-        <button
-          class={`app__mode-btn ${
-            viewMode() === "progress" ? "app__mode-btn--active" : ""
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setViewMode("progress");
-          }}
-        >
-          📊 進捗確認
-        </button>
-      </div>
+      <Show when={isUIVisible()}>
+        <div class="app__mode-switcher">
+          <button
+            class={`app__mode-btn ${
+              viewMode() === "workspace" ? "app__mode-btn--active" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewMode("workspace");
+            }}
+          >
+            📝 ワークスペース
+          </button>
+          <button
+            class={`app__mode-btn ${
+              viewMode() === "progress" ? "app__mode-btn--active" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewMode("progress");
+            }}
+          >
+            📊 進捗確認
+          </button>
+        </div>
+      </Show>
 
       <Show
         when={!todoStore.isLoading()}
@@ -226,35 +243,37 @@ function App() {
             </div>
           </div>
 
-          <div class="app__zoom-indicator">
-            ズーム: {Math.round(zoomLevel() * 100)}%
-            <div class="app__zoom-hint">Ctrl + マウスホイールでズーム</div>
-          </div>
+          <Show when={isUIVisible()}>
+            <div class="app__zoom-indicator">
+              ズーム: {Math.round(zoomLevel() * 100)}%
+              <div class="app__zoom-hint">Ctrl + マウスホイールでズーム</div>
+            </div>
 
-          <div class="app__controls">
-            <button
-              class="app__control-btn app__control-btn--reset"
-              onClick={(e) => {
-                e.stopPropagation();
-                resetView();
-              }}
-              title="ズームをリセット"
-            >
-              🔍 ズームリセット
-            </button>
-            <button
-              class="app__control-btn app__control-btn--arrange"
-              onClick={(e) => {
-                e.stopPropagation();
-                arrangeNotes();
-              }}
-              title="付箋を整理配置"
-            >
-              📐 付箋整理
-            </button>
-          </div>
+            <div class="app__controls">
+              <button
+                class="app__control-btn app__control-btn--reset"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  resetView();
+                }}
+                title="ズームをリセット"
+              >
+                🔍 ズームリセット
+              </button>
+              <button
+                class="app__control-btn app__control-btn--arrange"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  arrangeNotes();
+                }}
+                title="付箋を整理配置"
+              >
+                📐 付箋整理
+              </button>
+            </div>
 
-          <AddTodoButton />
+            <AddTodoButton />
+          </Show>
 
           {/* ドラッグ中の座標表示 */}
           <Show when={isAnyDragging()}>
