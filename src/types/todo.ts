@@ -11,6 +11,7 @@ export interface Todo {
   };
   deadline?: Date; // 期限（オプショナル）
   progress: number; // 進捗率（0-100）
+  currentPage: number; // 現在のページ（1: メイン, 2: 詳細）
 }
 
 export type StickyColor =

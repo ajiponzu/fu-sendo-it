@@ -40,6 +40,7 @@ export const todoStore = {
       updatedAt: new Date(),
       position: generateRandomPosition(),
       progress: 0, // デフォルト進捗率は0%
+      currentPage: 1, // デフォルトはメインページ
     };
     setTodos((prev) => [...prev, newTodo]);
     await todoStore.saveToStorage();
@@ -85,6 +86,18 @@ export const todoStore = {
       prev.map((todo) =>
         todo.id === id
           ? { ...todo, progress: clampedProgress, updatedAt: new Date() }
+          : todo
+      )
+    );
+    await todoStore.saveToStorage();
+  },
+
+  // 現在のページを更新する専用メソッド
+  updateCurrentPage: async (id: string, currentPage: number) => {
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id
+          ? { ...todo, currentPage, updatedAt: new Date() }
           : todo
       )
     );

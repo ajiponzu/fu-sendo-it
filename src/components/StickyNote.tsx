@@ -1,6 +1,8 @@
 import { Component, createSignal, Show } from "solid-js";
 import { Todo, StickyColor } from "../types/todo";
 import { todoStore } from "../store/todoStore";
+import StickyMainPage from "./sticky/StickyMainPage";
+import StickyDetailPage from "./sticky/StickyDetailPage";
 import "./StickyNote.css";
 
 interface StickyNoteProps {
@@ -9,9 +11,7 @@ interface StickyNoteProps {
 }
 
 const StickyNote: Component<StickyNoteProps> = (props) => {
-  const [isEditing, setIsEditing] = createSignal(false);
-  const [editTitle, setEditTitle] = createSignal(props.todo.title);
-  const [editContent, setEditContent] = createSignal(props.todo.content);
+  // 座標移動関連の状態のみ
   const [isDragging, setIsDragging] = createSignal(false);
   const [tempPosition, setTempPosition] = createSignal({ x: 0, y: 0 });
   const [mouseDownPosition, setMouseDownPosition] = createSignal({
@@ -23,58 +23,57 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     x: 0,
     y: 0,
   });
-  const [currentPage, setCurrentPage] = createSignal(1); // 1: メインページ, 2: 詳細ページ
-  const [editDeadline, setEditDeadline] = createSignal(
-    props.todo.deadline ? props.todo.deadline.toISOString().split("T")[0] : ""
-  );
-  const [editProgress, setEditProgress] = createSignal(props.todo.progress);
-  const [justFinishedDrag, setJustFinishedDrag] = createSignal(false); // ドラッグ終了直後フラグ
 
-  const handleSave = () => {
-    todoStore.updateTodo(props.todo.id, {
-      title: editTitle().trim() || "Untitled",
-      content: editContent().trim(),
-    });
-    setIsEditing(false);
+  // ページ切り替え機能（todoStoreの状態を使用）
+  const setCurrentPage = (page: number) => {
+    todoStore.updateCurrentPage(props.todo.id, page);
   };
 
-  const handleDeadlineSave = () => {
-    const deadlineDate = editDeadline() ? new Date(editDeadline()) : undefined;
-    todoStore.updateDeadline(props.todo.id, deadlineDate);
-  };
-
-  const handleProgressSave = () => {
-    todoStore.updateProgress(props.todo.id, editProgress());
-  };
-
-  const handleCancel = () => {
-    setEditTitle(props.todo.title);
-    setEditContent(props.todo.content);
-    setIsEditing(false);
-  };
-
+  // 削除機能
   const handleDelete = () => {
     if (confirm("この付箋を削除しますか？")) {
       todoStore.deleteTodo(props.todo.id);
     }
   };
 
+  // 色変更機能
   const changeColor = (color: StickyColor) => {
     todoStore.updateTodo(props.todo.id, { color });
   };
 
-  // マウスダウン開始
+  // マウスダウン開始（座標移動専用）
   const handleMouseDown = (e: MouseEvent) => {
-    // 編集中の場合、入力フィールド上でのドラッグのみ無効にする
-    if (isEditing()) {
-      const target = e.target as HTMLElement;
-      const isInputField =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.closest("input") ||
-        target.closest("textarea");
-      if (isInputField) return; // 入力フィールド上では ドラッグ無効
+    // 進捗率設定要素でのドラッグを無効にする
+    const target = e.target as HTMLElement;
+    const inputTarget = target as HTMLInputElement;
+    const isProgressControl =
+      inputTarget.type === "range" ||
+      inputTarget.type === "number" ||
+      inputTarget.type === "date" ||
+      target.classList.contains("sticky-note__progress-slider") ||
+      target.classList.contains("sticky-note__progress-input") ||
+      target.classList.contains("sticky-note__date-input") ||
+      target.classList.contains("sticky-note__progress-unit") ||
+      target.closest(".sticky-note__progress-slider") ||
+      target.closest(".sticky-note__progress-input") ||
+      target.closest(".sticky-note__progress-input-group") ||
+      target.closest(".sticky-note__date-input") ||
+      target.closest(".sticky-note__detail-group") ||
+      target.closest(".sticky-note__progress-bar");
+
+    if (isProgressControl) {
+      e.stopPropagation();
+      e.preventDefault();
+      return;
     }
+
+    // 入力フィールドでのドラッグを無効にする
+    const isInputField =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.closest("input") ||
+      target.closest("textarea");
+    if (isInputField) return;
 
     // マウスダウン位置を記録
     setMouseDownPosition({ x: e.clientX, y: e.clientY });
@@ -128,7 +127,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
     setTempPosition(newPosition);
   };
 
-  // マウスアップ終了
+  // マウスアップ終了（座標移動専用）
   const handleMouseUp = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
@@ -137,27 +136,9 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       // ドラッグ終了時に最終位置を保存
       todoStore.updatePosition(props.todo.id, tempPosition());
       setIsDragging(false);
-      setJustFinishedDrag(true);
-
-      // 100ms後にドラッグ終了フラグをリセット
-      setTimeout(() => setJustFinishedDrag(false), 100);
     }
 
     setHasMouseMoved(false);
-  };
-
-  // 編集領域をクリックした時の処理
-  const handleEditAreaClick = (e: MouseEvent) => {
-    // ドラッグ終了直後の場合はクリックイベントを無視
-    if (justFinishedDrag() || isDragging() || hasMouseMoved() || isEditing()) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-
-    setIsEditing(true);
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   // ランダムな回転角度を生成（付箋らしい効果）
@@ -184,7 +165,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
         <div class="sticky-note__page-indicator">
           <button
             class={`sticky-note__page-btn ${
-              currentPage() === 1 ? "sticky-note__page-btn--active" : ""
+              props.todo.currentPage === 1 ? "sticky-note__page-btn--active" : ""
             }`}
             onClick={() => setCurrentPage(1)}
           >
@@ -192,7 +173,7 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
           </button>
           <button
             class={`sticky-note__page-btn ${
-              currentPage() === 2 ? "sticky-note__page-btn--active" : ""
+              props.todo.currentPage === 2 ? "sticky-note__page-btn--active" : ""
             }`}
             onClick={() => setCurrentPage(2)}
           >
@@ -211,128 +192,12 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       </div>
 
       <div class="sticky-note__content">
-        <Show when={currentPage() === 1}>
-          <Show
-            when={isEditing()}
-            fallback={
-              <div
-                class="sticky-note__editable-area"
-                onClick={handleEditAreaClick}
-              >
-                <h3 class="sticky-note__title">
-                  {props.todo.title || "Untitled"}
-                </h3>
-                <p class="sticky-note__text">
-                  {props.todo.content || "クリックして編集..."}
-                </p>
-              </div>
-            }
-          >
-            <div class="sticky-note__edit-form">
-              <input
-                type="text"
-                class="sticky-note__title-input"
-                value={editTitle()}
-                onInput={(e) => setEditTitle(e.currentTarget.value)}
-                placeholder="タイトル"
-                autofocus
-              />
-              <textarea
-                class="sticky-note__content-input"
-                value={editContent()}
-                onInput={(e) => setEditContent(e.currentTarget.value)}
-                placeholder="内容を入力..."
-                rows="4"
-              />
-              <div class="sticky-note__edit-actions">
-                <button
-                  class="sticky-note__btn sticky-note__btn--save"
-                  onClick={handleSave}
-                >
-                  保存
-                </button>
-                <button
-                  class="sticky-note__btn sticky-note__btn--cancel"
-                  onClick={handleCancel}
-                >
-                  キャンセル
-                </button>
-              </div>
-            </div>
-          </Show>
+        <Show when={props.todo.currentPage === 1}>
+          <StickyMainPage todoId={props.todo.id} />
         </Show>
 
-        <Show when={currentPage() === 2}>
-          <div class="sticky-note__details">
-            <div class="sticky-note__detail-group">
-              <label class="sticky-note__detail-label">期限</label>
-              <input
-                type="date"
-                class="sticky-note__date-input"
-                value={editDeadline()}
-                onInput={(e) => {
-                  setEditDeadline(e.currentTarget.value);
-                  handleDeadlineSave();
-                }}
-              />
-              <Show when={props.todo.deadline}>
-                <button
-                  class="sticky-note__clear-btn"
-                  onClick={() => {
-                    setEditDeadline("");
-                    handleDeadlineSave();
-                  }}
-                  title="期限をクリア"
-                >
-                  ✕
-                </button>
-              </Show>
-            </div>
-
-            <div class="sticky-note__detail-group">
-              <label class="sticky-note__detail-label">
-                進捗率: {editProgress()}%
-              </label>
-              <input
-                type="range"
-                class="sticky-note__progress-slider"
-                min="0"
-                max="100"
-                step="1"
-                value={editProgress()}
-                onInput={(e) => {
-                  setEditProgress(parseInt(e.currentTarget.value));
-                  handleProgressSave();
-                }}
-              />
-              <div class="sticky-note__progress-input-group">
-                <input
-                  type="number"
-                  class="sticky-note__progress-input"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={editProgress()}
-                  onInput={(e) => {
-                    const value = Math.max(
-                      0,
-                      Math.min(100, parseInt(e.currentTarget.value) || 0)
-                    );
-                    setEditProgress(value);
-                    handleProgressSave();
-                  }}
-                />
-                <span class="sticky-note__progress-unit">%</span>
-              </div>
-            </div>
-
-            <div class="sticky-note__progress-bar">
-              <div
-                class="sticky-note__progress-fill"
-                style={{ width: `${editProgress()}%` }}
-              />
-            </div>
-          </div>
+        <Show when={props.todo.currentPage === 2}>
+          <StickyDetailPage todoId={props.todo.id} />
         </Show>
       </div>
 
