@@ -8,6 +8,8 @@ interface StickyDetailPageProps {
 const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
   const [editDeadline, setEditDeadline] = createSignal("");
   const [editProgress, setEditProgress] = createSignal(0);
+  const [displayProgress, setDisplayProgress] = createSignal(0);
+  const [isDragging, setIsDragging] = createSignal(false);
 
   // todoStoreから現在のデータを取得
   const getTodo = () => todoStore.todos().find((t) => t.id === props.todoId);
@@ -20,6 +22,7 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
         todo.deadline ? todo.deadline.toISOString().split("T")[0] : ""
       );
       setEditProgress(todo.progress);
+      setDisplayProgress(todo.progress);
     }
   };
 
@@ -33,6 +36,17 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
 
   const handleProgressSave = () => {
     todoStore.updateProgress(props.todoId, editProgress());
+    // 保存時に表示も更新
+    setDisplayProgress(editProgress());
+  };
+
+  // 操作中の進捗率更新（表示は更新しない）
+  const handleProgressChange = (value: number) => {
+    setEditProgress(value);
+    // ドラッグ中でなければ表示も更新
+    if (!isDragging()) {
+      setDisplayProgress(value);
+    }
   };
 
   const todo = getTodo();
@@ -68,7 +82,7 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
 
       <div class="sticky-note__detail-group">
         <label class="sticky-note__detail-label">
-          進捗率: {editProgress()}%
+          進捗率: {displayProgress()}%
         </label>
         <input
           type="range"
@@ -77,9 +91,17 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
           max="100"
           step="1"
           value={editProgress()}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            setIsDragging(true);
+          }}
           onInput={(e) => {
-            setEditProgress(parseInt(e.currentTarget.value));
+            const value = parseInt(e.currentTarget.value);
+            handleProgressChange(value);
+          }}
+          onMouseUp={() => {
+            setIsDragging(false);
+            setDisplayProgress(editProgress());
             handleProgressSave();
           }}
         />
@@ -97,7 +119,9 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
                 0,
                 Math.min(100, parseInt(e.currentTarget.value) || 0)
               );
-              setEditProgress(value);
+              handleProgressChange(value);
+            }}
+            onBlur={() => {
               handleProgressSave();
             }}
           />
@@ -108,7 +132,7 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
       <div class="sticky-note__progress-bar">
         <div
           class="sticky-note__progress-fill"
-          style={{ width: `${editProgress()}%` }}
+          style={{ width: `${displayProgress()}%` }}
         />
       </div>
     </div>
