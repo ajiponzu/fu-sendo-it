@@ -72,7 +72,8 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
         <Show when={todo.deadline}>
           <button
             class="sticky-note__clear-btn"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setEditDeadline("");
               todoStore.updateDeadline(props.todoId, undefined);
             }}

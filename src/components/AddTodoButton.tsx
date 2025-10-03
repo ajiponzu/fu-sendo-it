@@ -32,7 +32,10 @@ const AddTodoButton: Component = () => {
     <div class="add-todo">
       <button
         class="add-todo__trigger"
-        onClick={() => setIsOpen(!isOpen())}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen());
+        }}
         title="新しい付箋を追加"
       >
         ＋
@@ -46,7 +49,10 @@ const AddTodoButton: Component = () => {
               <button
                 type="button"
                 class="add-todo__close"
-                onClick={handleCancel}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancel();
+                }}
               >
                 ✕
               </button>
@@ -82,7 +88,10 @@ const AddTodoButton: Component = () => {
                           ? "add-todo__color-btn--active"
                           : ""
                       }`}
-                      onClick={() => setSelectedColor(color)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedColor(color);
+                      }}
                       title={`色: ${color}`}
                     />
                   ))}
@@ -96,7 +105,10 @@ const AddTodoButton: Component = () => {
                 <button
                   type="button"
                   class="add-todo__cancel"
-                  onClick={handleCancel}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancel();
+                  }}
                 >
                   キャンセル
                 </button>

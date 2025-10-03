@@ -7,14 +7,14 @@ const [isLoading, setIsLoading] = createSignal(false);
 
 // ランダムな位置を生成する関数
 const generateRandomPosition = () => {
-  // 基準となる画面サイズでランダムな位置を生成（ズームに依存しない座標系）
-  const baseWidth = 1200; // 基準幅
-  const baseHeight = 800; // 基準高さ
+  // より広い範囲でランダムな位置を生成（境界制限を緩和）
+  const baseWidth = 2000; // より広い基準幅
+  const baseHeight = 1500; // より広い基準高さ
 
-  const maxX = baseWidth * 0.8;
-  const maxY = baseHeight * 0.8;
-  const minX = 50;
-  const minY = 50;
+  const maxX = baseWidth;
+  const maxY = baseHeight;
+  const minX = -500; // 負の座標も許可
+  const minY = -300; // 負の座標も許可
 
   return {
     x: Math.random() * (maxX - minX) + minX,

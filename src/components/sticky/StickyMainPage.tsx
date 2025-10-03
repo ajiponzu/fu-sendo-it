@@ -49,7 +49,13 @@ const StickyMainPage: Component<StickyMainPageProps> = (props) => {
     <Show
       when={isEditing()}
       fallback={
-        <div class="sticky-note__editable-area" onClick={handleEditAreaClick}>
+        <div
+          class="sticky-note__editable-area"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditAreaClick(e);
+          }}
+        >
           <h3 class="sticky-note__title">{todo.title || "Untitled"}</h3>
           <p class="sticky-note__text">
             {todo.content || "クリックして編集..."}
@@ -76,13 +82,19 @@ const StickyMainPage: Component<StickyMainPageProps> = (props) => {
         <div class="sticky-note__edit-actions">
           <button
             class="sticky-note__btn sticky-note__btn--save"
-            onClick={handleSave}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSave();
+            }}
           >
             保存
           </button>
           <button
             class="sticky-note__btn sticky-note__btn--cancel"
-            onClick={handleCancel}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCancel();
+            }}
           >
             キャンセル
           </button>

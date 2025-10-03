@@ -43,6 +43,9 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
 
   // マウスダウン開始（座標移動専用）
   const handleMouseDown = (e: MouseEvent) => {
+    // 背景ドラッグとの衝突を防ぐため、付箋でのイベントは伝播を停止
+    e.stopPropagation();
+
     // 進捗率設定要素でのドラッグを無効にする
     const target = e.target as HTMLElement;
     const inputTarget = target as HTMLInputElement;
@@ -62,7 +65,6 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
       target.closest(".sticky-note__progress-bar");
 
     if (isProgressControl) {
-      e.stopPropagation();
       e.preventDefault();
       return;
     }
@@ -104,25 +106,17 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
 
     if (!isDragging()) return;
 
-    // ズームレベルを考慮した相対移動量を計算
-    const deltaX = (e.clientX - mouseDownPosition().x) / props.zoomLevel;
-    const deltaY = (e.clientY - mouseDownPosition().y) / props.zoomLevel;
+    // ズームレベルに応じた移動量調整（ズームイン時は移動量を小さく、ズームアウト時は大きく）
+    const movementScale = props.zoomLevel; // ズームレベルが高いほど移動量を小さく
+    const deltaX = (e.clientX - mouseDownPosition().x) / movementScale;
+    const deltaY = (e.clientY - mouseDownPosition().y) / movementScale;
 
     const newPosition = {
       x: dragStartPosition().x + deltaX,
       y: dragStartPosition().y + deltaY,
     };
 
-    // ズーム時も実際の利用可能領域で制限（ズームアウト時により広い範囲で移動可能）
-    const effectiveWidth = window.innerWidth / props.zoomLevel;
-    const effectiveHeight = window.innerHeight / props.zoomLevel;
-
-    const maxX = effectiveWidth - 50; // 付箋が見切れないための余白
-    const maxY = effectiveHeight - 50;
-
-    newPosition.x = Math.max(20, Math.min(maxX, newPosition.x));
-    newPosition.y = Math.max(20, Math.min(maxY, newPosition.y));
-
+    // 境界制限を削除して自由な移動を可能にする
     // ドラッグ中は一時的な位置のみ更新
     setTempPosition(newPosition);
   };
@@ -169,7 +163,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
                 ? "sticky-note__page-btn--active"
                 : ""
             }`}
-            onClick={() => setCurrentPage(1)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentPage(1);
+            }}
           >
             📝
           </button>
@@ -179,7 +176,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
                 ? "sticky-note__page-btn--active"
                 : ""
             }`}
-            onClick={() => setCurrentPage(2)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentPage(2);
+            }}
           >
             📊
           </button>
@@ -187,7 +187,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
         <div class="sticky-note__actions">
           <button
             class="sticky-note__btn sticky-note__btn--delete"
-            onClick={handleDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
             title="削除"
           >
             ✕
@@ -215,7 +218,10 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
                     ? "sticky-note__color-btn--active"
                     : ""
                 }`}
-                onClick={() => changeColor(color as StickyColor)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeColor(color as StickyColor);
+                }}
                 title={`色を${color}に変更`}
               />
             )

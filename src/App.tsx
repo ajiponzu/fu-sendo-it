@@ -12,6 +12,15 @@ function App() {
     height: window.innerHeight,
   });
 
+  // 表示の相対座標管理
+  const [viewOffset, setViewOffset] = createSignal({ x: 0, y: 0 });
+  const [isDraggingView, setIsDraggingView] = createSignal(false);
+  const [dragStartPosition, setDragStartPosition] = createSignal({
+    x: 0,
+    y: 0,
+  });
+  const [dragStartOffset, setDragStartOffset] = createSignal({ x: 0, y: 0 });
+
   onMount(() => {
     todoStore.loadFromStorage();
 
@@ -20,15 +29,15 @@ function App() {
       const newSize = { width: window.innerWidth, height: window.innerHeight };
       const oldSize = windowSize();
 
-      // 既存の付箋の相対位置を保持
+      // 既存の付箋の相対位置を保持（境界制限なし）
       if (todoStore.todos().length > 0) {
         todoStore.todos().forEach((todo) => {
           const relativeX = todo.position.x / oldSize.width;
           const relativeY = todo.position.y / oldSize.height;
 
           const newPosition = {
-            x: Math.min(relativeX * newSize.width, newSize.width - 270),
-            y: Math.min(relativeY * newSize.height, newSize.height - 220),
+            x: relativeX * newSize.width,
+            y: relativeY * newSize.height,
           };
 
           todoStore.updatePosition(todo.id, newPosition);
@@ -45,10 +54,52 @@ function App() {
     };
   });
 
-  // ズームをリセットする関数
-  const resetZoom = () => {
+  // ズームと表示位置をリセットする関数
+  const resetView = () => {
     setZoomLevel(1);
     setTransformOrigin("50% 50%");
+    setViewOffset({ x: 0, y: 0 });
+  };
+
+  // 背景ドラッグのイベントハンドラー
+  const handleMouseDown = (e: MouseEvent) => {
+    // 付箋やボタンをクリックした場合は無視
+    const target = e.target as HTMLElement;
+    if (
+      target.closest(".sticky-note") ||
+      target.closest(".app__control-btn") ||
+      target.closest(".add-todo-button")
+    ) {
+      return;
+    }
+
+    setIsDraggingView(true);
+    setDragStartPosition({ x: e.clientX, y: e.clientY });
+    setDragStartOffset(viewOffset());
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDraggingView()) return;
+
+    // ズームレベルに応じた移動量調整（ズームイン時は移動量を小さく、ズームアウト時は大きく）
+    const movementScale = zoomLevel(); // ズームレベルが高いほど移動量を小さく
+    const deltaX = (e.clientX - dragStartPosition().x) / movementScale;
+    const deltaY = (e.clientY - dragStartPosition().y) / movementScale;
+
+    setViewOffset({
+      x: dragStartOffset().x + deltaX,
+      y: dragStartOffset().y + deltaY,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDraggingView(false);
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
   };
 
   // 付箋を整理配置する関数
@@ -69,6 +120,7 @@ function App() {
       >
         <div
           class="app__workspace-container"
+          onMouseDown={handleMouseDown}
           onWheel={(e) => {
             if (e.ctrlKey || e.metaKey) {
               e.preventDefault();
@@ -88,11 +140,16 @@ function App() {
               setZoomLevel(newZoom);
             }
           }}
+          style={{
+            cursor: isDraggingView() ? "grabbing" : "grab",
+          }}
         >
           <div
             class="app__workspace"
             style={{
-              transform: `scale(${zoomLevel()})`,
+              transform: `scale(${zoomLevel()}) translate(${
+                viewOffset().x
+              }px, ${viewOffset().y}px)`,
               "transform-origin": transformOrigin(),
               width: `${100 / zoomLevel()}vw`,
               height: `${100 / zoomLevel()}vh`,
@@ -125,14 +182,20 @@ function App() {
         <div class="app__controls">
           <button
             class="app__control-btn app__control-btn--reset"
-            onClick={resetZoom}
+            onClick={(e) => {
+              e.stopPropagation();
+              resetView();
+            }}
             title="ズームをリセット"
           >
             🔍 ズームリセット
           </button>
           <button
             class="app__control-btn app__control-btn--arrange"
-            onClick={arrangeNotes}
+            onClick={(e) => {
+              e.stopPropagation();
+              arrangeNotes();
+            }}
             title="付箋を整理配置"
           >
             📐 付箋整理
