@@ -1,0 +1,215 @@
+/* ProgressView.css - 進捗・期限確認画面のスタイル */
+.progress-view {
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.progress-view__content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: calc(100vh - 40px);
+}
+
+.progress-view__section {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-view__section h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.progress-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.progress-view__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.progress-view__list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.progress-view__list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.progress-view__item {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #ddd;
+  transition: transform 0.2s ease;
+}
+
+.progress-view__item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 付箋の色に応じたボーダー */
+.progress-view__item--yellow {
+  border-left-color: #ffd54f;
+}
+
+.progress-view__item--pink {
+  border-left-color: #f06292;
+}
+
+.progress-view__item--blue {
+  border-left-color: #42a5f5;
+}
+
+.progress-view__item--green {
+  border-left-color: #66bb6a;
+}
+
+.progress-view__item--orange {
+  border-left-color: #ff7043;
+}
+
+.progress-view__item--purple {
+  border-left-color: #ab47bc;
+}
+
+.progress-view__item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progress-view__item-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.progress-view__progress-badge {
+  background: #4caf50;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  min-width: 50px;
+  text-align: center;
+}
+
+.progress-view__progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-view__progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-view__deadline-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+  min-width: 80px;
+}
+
+.progress-view__deadline-badge--overdue {
+  background: #f44336;
+  color: white;
+}
+
+.progress-view__deadline-badge--today {
+  background: #ff9800;
+  color: white;
+}
+
+.progress-view__deadline-badge--urgent {
+  background: #ff5722;
+  color: white;
+}
+
+.progress-view__deadline-badge--warning {
+  background: #ffc107;
+  color: #333;
+}
+
+.progress-view__deadline-badge--normal {
+  background: #e8f5e8;
+  color: #4caf50;
+}
+
+.progress-view__item-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.progress-view__deadline-date {
+  font-weight: 500;
+}
+
+.progress-view__progress-text {
+  font-weight: 500;
+}
+
+.progress-view__item-content {
+  margin-top: 8px;
+}
+
+.progress-view__item-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 900px) {
+  .progress-view__content {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-view__stats {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .progress-view {
+    padding: 15px;
+  }
+}

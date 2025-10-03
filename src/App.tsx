@@ -2,6 +2,7 @@ import { onMount, For, Show, createSignal } from "solid-js";
 import { todoStore } from "./store/todoStore";
 import StickyNote from "./components/StickyNote";
 import AddTodoButton from "./components/AddTodoButton";
+import ProgressView from "./components/ProgressView";
 import "./App.css";
 
 function App() {
@@ -23,6 +24,11 @@ function App() {
 
   // 全体のドラッグ状態管理（背景ドラッグか付箋ドラッグかを区別）
   const [isAnyDragging, setIsAnyDragging] = createSignal(false);
+
+  // 表示モード管理（ワークスペース or 進捗確認）
+  const [viewMode, setViewMode] = createSignal<"workspace" | "progress">(
+    "workspace"
+  );
 
   onMount(() => {
     todoStore.loadFromStorage();
@@ -118,6 +124,32 @@ function App() {
 
   return (
     <main class="app">
+      {/* 表示モード切り替えボタン */}
+      <div class="app__mode-switcher">
+        <button
+          class={`app__mode-btn ${
+            viewMode() === "workspace" ? "app__mode-btn--active" : ""
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewMode("workspace");
+          }}
+        >
+          📝 ワークスペース
+        </button>
+        <button
+          class={`app__mode-btn ${
+            viewMode() === "progress" ? "app__mode-btn--active" : ""
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewMode("progress");
+          }}
+        >
+          📊 進捗確認
+        </button>
+      </div>
+
       <Show
         when={!todoStore.isLoading()}
         fallback={
@@ -127,115 +159,124 @@ function App() {
           </div>
         }
       >
-        <div
-          class="app__workspace-container"
-          onMouseDown={handleMouseDown}
-          onWheel={(e) => {
-            if (e.ctrlKey || e.metaKey) {
-              e.preventDefault();
-
-              // マウスカーソルの位置を取得
-              const rect = e.currentTarget.getBoundingClientRect();
-              const mouseX = e.clientX - rect.left;
-              const mouseY = e.clientY - rect.top;
-
-              // パーセンテージでtransform-originを設定
-              const originX = (mouseX / rect.width) * 100;
-              const originY = (mouseY / rect.height) * 100;
-              setTransformOrigin(`${originX}% ${originY}%`);
-
-              const delta = e.deltaY > 0 ? -0.1 : 0.1;
-              const newZoom = Math.min(Math.max(zoomLevel() + delta, 0.5), 2.0);
-              setZoomLevel(newZoom);
-            }
-          }}
-          style={{
-            cursor: isDraggingView() ? "grabbing" : "grab",
-          }}
-        >
+        <Show when={viewMode() === "workspace"}>
           <div
-            class="app__workspace"
-            style={{
-              transform: `scale(${zoomLevel()}) translate(${
-                viewOffset().x
-              }px, ${viewOffset().y}px)`,
-              "transform-origin": transformOrigin(),
-              width: `${100 / zoomLevel()}vw`,
-              height: `${100 / zoomLevel()}vh`,
-              "min-width": `${100 / zoomLevel()}vw`,
-              "min-height": `${100 / zoomLevel()}vh`,
-            }}
-          >
-            <Show
-              when={todoStore.todos().length > 0}
-              fallback={
-                <div class="app__empty">
-                  <p class="app__empty-message">
-                    付箋がありません。新しい付箋を追加してみましょう！
-                  </p>
-                </div>
+            class="app__workspace-container"
+            onMouseDown={handleMouseDown}
+            onWheel={(e) => {
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+
+                // マウスカーソルの位置を取得
+                const rect = e.currentTarget.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // パーセンテージでtransform-originを設定
+                const originX = (mouseX / rect.width) * 100;
+                const originY = (mouseY / rect.height) * 100;
+                setTransformOrigin(`${originX}% ${originY}%`);
+
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                const newZoom = Math.min(
+                  Math.max(zoomLevel() + delta, 0.5),
+                  2.0
+                );
+                setZoomLevel(newZoom);
               }
+            }}
+            style={{
+              cursor: isDraggingView() ? "grabbing" : "grab",
+            }}
+          >
+            <div
+              class="app__workspace"
+              style={{
+                transform: `scale(${zoomLevel()}) translate(${
+                  viewOffset().x
+                }px, ${viewOffset().y}px)`,
+                "transform-origin": transformOrigin(),
+                width: `${100 / zoomLevel()}vw`,
+                height: `${100 / zoomLevel()}vh`,
+                "min-width": `${100 / zoomLevel()}vw`,
+                "min-height": `${100 / zoomLevel()}vh`,
+              }}
             >
-              <For each={todoStore.todos()}>
-                {(todo) => (
-                  <StickyNote
-                    todo={todo}
-                    zoomLevel={zoomLevel()}
-                    onDragStart={() => setIsAnyDragging(true)}
-                    onDragEnd={() => setIsAnyDragging(false)}
-                  />
-                )}
-              </For>
-            </Show>
-          </div>
-        </div>
-
-        <div class="app__zoom-indicator">
-          ズーム: {Math.round(zoomLevel() * 100)}%
-          <div class="app__zoom-hint">Ctrl + マウスホイールでズーム</div>
-        </div>
-
-        <div class="app__controls">
-          <button
-            class="app__control-btn app__control-btn--reset"
-            onClick={(e) => {
-              e.stopPropagation();
-              resetView();
-            }}
-            title="ズームをリセット"
-          >
-            🔍 ズームリセット
-          </button>
-          <button
-            class="app__control-btn app__control-btn--arrange"
-            onClick={(e) => {
-              e.stopPropagation();
-              arrangeNotes();
-            }}
-            title="付箋を整理配置"
-          >
-            📐 付箋整理
-          </button>
-        </div>
-
-        <AddTodoButton />
-
-        {/* ドラッグ中の座標表示 */}
-        <Show when={isAnyDragging()}>
-          <div class="app__drag-coordinates">
-            <div class="app__drag-coordinate app__drag-coordinate--left">
-              <div class="app__coordinate-label">X</div>
-              <div class="app__coordinate-value">
-                {Math.round(viewOffset().x)}
-              </div>
-            </div>
-            <div class="app__drag-coordinate app__drag-coordinate--right">
-              <div class="app__coordinate-label">Y</div>
-              <div class="app__coordinate-value">
-                {Math.round(viewOffset().y)}
-              </div>
+              <Show
+                when={todoStore.todos().length > 0}
+                fallback={
+                  <div class="app__empty">
+                    <p class="app__empty-message">
+                      付箋がありません。新しい付箋を追加してみましょう！
+                    </p>
+                  </div>
+                }
+              >
+                <For each={todoStore.todos()}>
+                  {(todo) => (
+                    <StickyNote
+                      todo={todo}
+                      zoomLevel={zoomLevel()}
+                      onDragStart={() => setIsAnyDragging(true)}
+                      onDragEnd={() => setIsAnyDragging(false)}
+                    />
+                  )}
+                </For>
+              </Show>
             </div>
           </div>
+
+          <div class="app__zoom-indicator">
+            ズーム: {Math.round(zoomLevel() * 100)}%
+            <div class="app__zoom-hint">Ctrl + マウスホイールでズーム</div>
+          </div>
+
+          <div class="app__controls">
+            <button
+              class="app__control-btn app__control-btn--reset"
+              onClick={(e) => {
+                e.stopPropagation();
+                resetView();
+              }}
+              title="ズームをリセット"
+            >
+              🔍 ズームリセット
+            </button>
+            <button
+              class="app__control-btn app__control-btn--arrange"
+              onClick={(e) => {
+                e.stopPropagation();
+                arrangeNotes();
+              }}
+              title="付箋を整理配置"
+            >
+              📐 付箋整理
+            </button>
+          </div>
+
+          <AddTodoButton />
+
+          {/* ドラッグ中の座標表示 */}
+          <Show when={isAnyDragging()}>
+            <div class="app__drag-coordinates">
+              <div class="app__drag-coordinate app__drag-coordinate--left">
+                <div class="app__coordinate-label">X</div>
+                <div class="app__coordinate-value">
+                  {Math.round(viewOffset().x)}
+                </div>
+              </div>
+              <div class="app__drag-coordinate app__drag-coordinate--right">
+                <div class="app__coordinate-label">Y</div>
+                <div class="app__coordinate-value">
+                  {Math.round(viewOffset().y)}
+                </div>
+              </div>
+            </div>
+          </Show>
+        </Show>
+
+        <Show when={viewMode() === "progress"}>
+          <ProgressView />
         </Show>
       </Show>
     </main>
