@@ -110,6 +110,10 @@ function App() {
   // 付箋を整理配置する関数
   const arrangeNotes = async () => {
     await todoStore.arrangeNotes();
+    // 整理後に表示位置もリセットして付箋が見やすい位置に戻す
+    setViewOffset({ x: 0, y: 0 });
+    setZoomLevel(1);
+    setTransformOrigin("50% 50%");
   };
 
   return (

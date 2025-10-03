@@ -125,7 +125,7 @@ export const todoStore = {
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // グリッド状に配置
+    // グリッド状に配置し、表示ページもリセット
     sortedTodos.forEach((todo, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
@@ -135,7 +135,10 @@ export const todoStore = {
         y: startY + row * noteHeight,
       };
 
+      // 位置を更新
       todoStore.updatePosition(todo.id, newPosition);
+      // 表示ページを1ページ目にリセット
+      todoStore.updateCurrentPage(todo.id, 1);
     });
   },
 
