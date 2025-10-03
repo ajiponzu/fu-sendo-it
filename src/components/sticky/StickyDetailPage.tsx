@@ -10,6 +10,8 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
   const [editProgress, setEditProgress] = createSignal(0);
   const [displayProgress, setDisplayProgress] = createSignal(0);
   const [isDragging, setIsDragging] = createSignal(false);
+  const [showTooltip, setShowTooltip] = createSignal(false);
+  const [tooltipValue, setTooltipValue] = createSignal(0);
 
   // todoStoreから現在のデータを取得
   const getTodo = () => todoStore.todos().find((t) => t.id === props.todoId);
@@ -43,6 +45,7 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
   // 操作中の進捗率更新（表示は更新しない）
   const handleProgressChange = (value: number) => {
     setEditProgress(value);
+    setTooltipValue(value);
     // ドラッグ中でなければ表示も更新
     if (!isDragging()) {
       setDisplayProgress(value);
@@ -84,48 +87,41 @@ const StickyDetailPage: Component<StickyDetailPageProps> = (props) => {
         <label class="sticky-note__detail-label">
           進捗率: {displayProgress()}%
         </label>
-        <input
-          type="range"
-          class="sticky-note__progress-slider"
-          min="0"
-          max="100"
-          step="1"
-          value={editProgress()}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            setIsDragging(true);
-          }}
-          onInput={(e) => {
-            const value = parseInt(e.currentTarget.value);
-            handleProgressChange(value);
-          }}
-          onMouseUp={() => {
-            setIsDragging(false);
-            setDisplayProgress(editProgress());
-            handleProgressSave();
-          }}
-        />
-        <div class="sticky-note__progress-input-group">
+        <div style="position: relative;">
           <input
-            type="number"
-            class="sticky-note__progress-input"
+            type="range"
+            class="sticky-note__progress-slider"
             min="0"
             max="100"
             step="1"
             value={editProgress()}
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              setIsDragging(true);
+              setShowTooltip(true);
+              setTooltipValue(editProgress());
+            }}
             onInput={(e) => {
-              const value = Math.max(
-                0,
-                Math.min(100, parseInt(e.currentTarget.value) || 0)
-              );
+              const value = parseInt(e.currentTarget.value);
               handleProgressChange(value);
             }}
-            onBlur={() => {
+            onMouseUp={() => {
+              setIsDragging(false);
+              setShowTooltip(false);
+              setDisplayProgress(editProgress());
               handleProgressSave();
             }}
+            onMouseLeave={() => {
+              setShowTooltip(false);
+            }}
           />
-          <span class="sticky-note__progress-unit">%</span>
+          <div
+            class={`sticky-note__progress-tooltip ${
+              showTooltip() ? "sticky-note__progress-tooltip--visible" : ""
+            }`}
+          >
+            {tooltipValue()}%
+          </div>
         </div>
       </div>
 
