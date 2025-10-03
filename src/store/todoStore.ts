@@ -96,9 +96,7 @@ export const todoStore = {
   updateCurrentPage: async (id: string, currentPage: number) => {
     setTodos((prev) =>
       prev.map((todo) =>
-        todo.id === id
-          ? { ...todo, currentPage, updatedAt: new Date() }
-          : todo
+        todo.id === id ? { ...todo, currentPage, updatedAt: new Date() } : todo
       )
     );
     await todoStore.saveToStorage();

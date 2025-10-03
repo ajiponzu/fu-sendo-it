@@ -361,7 +361,7 @@
 
 .sticky-note__clear-btn {
   position: absolute;
-  right: 4px;
+  right: 25px;
   top: 24px;
   background: rgba(244, 67, 54, 0.8);
   color: white;

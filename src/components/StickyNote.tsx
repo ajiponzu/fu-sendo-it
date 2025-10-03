@@ -165,7 +165,9 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
         <div class="sticky-note__page-indicator">
           <button
             class={`sticky-note__page-btn ${
-              props.todo.currentPage === 1 ? "sticky-note__page-btn--active" : ""
+              props.todo.currentPage === 1
+                ? "sticky-note__page-btn--active"
+                : ""
             }`}
             onClick={() => setCurrentPage(1)}
           >
@@ -173,7 +175,9 @@ const StickyNote: Component<StickyNoteProps> = (props) => {
           </button>
           <button
             class={`sticky-note__page-btn ${
-              props.todo.currentPage === 2 ? "sticky-note__page-btn--active" : ""
+              props.todo.currentPage === 2
+                ? "sticky-note__page-btn--active"
+                : ""
             }`}
             onClick={() => setCurrentPage(2)}
           >
